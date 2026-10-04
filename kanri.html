@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>管理画面 | Green Room</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css">
+
+</head>
+
+
+<body>
+
+
+<header class="header">
+
+    <div class="logo">
+        🌿 Green Room
+    </div>
+
+
+    <nav>
+
+        <a href="index.html">
+            ホーム
+        </a>
+
+        <a href="soudan.html">
+            相談ページ
+        </a>
+
+        <button
+            id="logoutButton"
+            class="secondary-button"
+            type="button">
+
+            ログアウト
+
+        </button>
+
+    </nav>
+
+</header>
+
+
+
+<main class="chat-page">
+
+
+    <div class="chat-header">
+
+        <p class="section-label">
+            ADMIN
+        </p>
+
+        <h1>
+            相談管理
+        </h1>
+
+        <p>
+            届いた相談を確認して、<br>
+            それぞれの相談に個別に返信できます。
+        </p>
+<button
+    id="enableNotificationButton"
+    class="secondary-button"
+    type="button">
+
+    🔔 通知を有効にする
+
+</button>
+
+<p
+    id="notificationStatus"
+    class="status-message">
+</p>
+    </div>
+
+
+
+    <!-- 相談一覧 -->
+
+    <div id="consultations">
+
+        <div class="chat-box">
+
+            相談を読み込んでいます...
+
+        </div>
+
+    </div>
+
+
+</main>
+
+
+
+<footer>
+
+    <p>
+        © Green Room
+    </p>
+
+</footer>
+
+
+
+<!-- Supabase -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+<!-- 管理画面用JavaScript -->
+
+<script src="kanri.js"></script>
+
+
+</body>
+
+</html>
