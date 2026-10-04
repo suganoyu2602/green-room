@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>相談する | Green Room</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css">
+
+</head>
+
+
+<body>
+
+
+<header class="header">
+
+    <div class="logo">
+        🌿 Green Room
+    </div>
+
+
+    <nav>
+
+        <a href="index.html">
+            ホーム
+        </a>
+
+        <a href="soudan.html">
+            相談する
+        </a>
+
+    </nav>
+
+</header>
+
+
+
+<main class="chat-page">
+
+
+    <div class="chat-header">
+
+        <p class="section-label">
+            CONSULTATION
+        </p>
+
+        <h1>
+            相談する
+        </h1>
+
+        <p>
+            誰かに話したいことを<br>
+            自分のペースで書いてみてください。
+        </p>
+
+    </div>
+
+
+
+    <!-- 相談を書く場所 -->
+
+    <div class="chat-box">
+
+
+        <div class="input-area">
+
+
+            <input
+                type="text"
+                id="nickname"
+                placeholder="ニックネーム">
+
+
+            <textarea
+                id="message"
+                placeholder="相談内容を書いてください..."
+            ></textarea>
+
+
+            <button
+                id="sendButton">
+
+                相談を送る
+
+            </button>
+
+
+        </div>
+
+
+        <p
+            id="sendMessage"
+            class="status-message">
+        </p>
+
+
+    </div>
+
+
+
+    <!-- 自分の相談 -->
+
+    <div class="my-consultations">
+
+
+        <div class="chat-header">
+
+            <h2>
+                あなたの相談
+            </h2>
+
+            <p>
+                送った相談と管理者からの返信を確認できます。
+            </p>
+
+        </div>
+
+
+        <div id="myConsultations">
+
+            相談を読み込んでいます...
+
+        </div>
+
+
+    </div>
+
+
+</main>
+
+
+
+<footer>
+
+    <p>
+        © Green Room
+    </p>
+
+</footer>
+
+
+<!-- 相談ページ用JavaScript -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="soudan.js"></script>
+
+</body>
+</html>
+
+
+
