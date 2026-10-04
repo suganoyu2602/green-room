@@ -1,7 +1,3 @@
-// ================================
-// Supabase設定
-// ================================
-
 const SUPABASE_URL =
     "https://yepucytxmlssewdxedzp.supabase.co";
 
@@ -15,9 +11,9 @@ const supabaseClient =
     );
 
 
-// ================================
-// HTML取得
-// ================================
+// =========================
+// HTML要素
+// =========================
 
 const nicknameInput =
     document.getElementById("nickname");
@@ -31,13 +27,37 @@ const sendButton =
 const sendMessage =
     document.getElementById("sendMessage");
 
-const myConsultations =
-    document.getElementById("myConsultations");
+const consultationList =
+    document.getElementById("consultationList");
+
+const newConsultation =
+    document.getElementById("newConsultation");
+
+const chatArea =
+    document.getElementById("chatArea");
+
+const messages =
+    document.getElementById("messages");
+
+const chatMessage =
+    document.getElementById("chatMessage");
+
+const sendChatButton =
+    document.getElementById("sendChatButton");
+
+const backButton =
+    document.getElementById("backButton");
+
+const logoutButton =
+    document.getElementById("logoutButton");
 
 
-// ================================
+let currentConsultationId = null;
+
+
+// =========================
 // HTMLエスケープ
-// ================================
+// =========================
 
 function escapeHtml(text) {
 
@@ -51,9 +71,9 @@ function escapeHtml(text) {
 }
 
 
-// ================================
+// =========================
 // ログイン中のユーザー取得
-// ================================
+// =========================
 
 async function getCurrentUser() {
 
@@ -77,67 +97,30 @@ async function getCurrentUser() {
 }
 
 
-// ================================
-// 自分の相談を表示
-// ================================
+// =========================
+// 相談一覧を読み込む
+// =========================
 
-async function loadMyConsultations() {
-
-    if (!myConsultations) {
-        return;
-    }
-
-    myConsultations.innerHTML = `
-        <div class="loading-card">
-            <div class="loading-icon">🌿</div>
-            <p>相談を読み込んでいます...</p>
-        </div>
-    `;
+async function loadConsultations() {
 
     const user =
         await getCurrentUser();
 
-
-    // ----------------------------
-    // ログインしていない場合
-    // ----------------------------
-
     if (!user) {
 
-        myConsultations.innerHTML = `
-            <div class="empty-card">
-
-                <div class="empty-icon">
-                    🌱
-                </div>
-
-                <h3>
-                    ログインすると相談を確認できます
-                </h3>
-
-                <p>
-                    自分が送った相談と<br>
-                    管理者からの返信を確認できます。
-                </p>
-
-                <a
-                    href="login.html"
-                    class="main-button small-button">
-
-                    ログインする
-
-                </a>
-
-            </div>
-        `;
+        window.location.href =
+            "login.html";
 
         return;
     }
 
 
-    // ----------------------------
-    // 自分の相談を取得
-    // ----------------------------
+    consultationList.innerHTML = `
+        <div class="chat-box">
+            相談を読み込んでいます...
+        </div>
+    `;
+
 
     const {
         data,
@@ -145,7 +128,9 @@ async function loadMyConsultations() {
     } =
         await supabaseClient
             .from("consultations")
-            .select("*")
+            .select(
+                "id, created_at, nickname, message, user_id"
+            )
             .eq(
                 "user_id",
                 user.id
@@ -165,16 +150,12 @@ async function loadMyConsultations() {
             error
         );
 
-        myConsultations.innerHTML = `
-            <div class="empty-card">
+        consultationList.innerHTML = `
+            <div class="chat-box">
 
-                <div class="empty-icon">
-                    ⚠️
-                </div>
-
-                <h3>
-                    相談を読み込めませんでした
-                </h3>
+                <p>
+                    相談を読み込めませんでした。
+                </p>
 
                 <p>
                     ${escapeHtml(
@@ -189,27 +170,174 @@ async function loadMyConsultations() {
     }
 
 
-    // ----------------------------
-    // 相談がない場合
-    // ----------------------------
+    consultationList.innerHTML = "";
+
 
     if (!data || data.length === 0) {
 
-        myConsultations.innerHTML = `
-            <div class="empty-card">
+        return;
+    }
 
-                <div class="empty-icon">
-                    🌱
-                </div>
 
-                <h3>
-                    まだ相談はありません
-                </h3>
+    data.forEach(function(item) {
 
-                <p>
-                    誰かに話したいことがあれば、<br>
-                    自分のペースで相談してみてください。
-                </p>
+        const card =
+            document.createElement("button");
+
+        card.type =
+            "button";
+
+        card.className =
+            "consultation-list-card";
+
+
+        const createdAt =
+            item.created_at
+                ? new Date(
+                    item.created_at
+                ).toLocaleString(
+                    "ja-JP"
+                )
+                : "";
+
+
+        card.innerHTML = `
+
+            <div class="consultation-list-title">
+
+                🌿 Green Room
+
+            </div>
+
+            <div class="consultation-list-message">
+
+                ${escapeHtml(
+                    item.message || ""
+                )}
+
+            </div>
+
+            <div class="consultation-list-date">
+
+                ${escapeHtml(
+                    createdAt
+                )}
+
+            </div>
+
+        `;
+
+
+        card.addEventListener(
+            "click",
+            function() {
+
+                openChat(item.id);
+
+            }
+        );
+
+
+        consultationList.appendChild(
+            card
+        );
+
+    });
+
+}
+
+
+// =========================
+// チャットを開く
+// =========================
+
+async function openChat(
+    consultationId
+) {
+
+    currentConsultationId =
+        consultationId;
+
+
+    newConsultation.style.display =
+        "none";
+
+    consultationList.style.display =
+        "none";
+
+    chatArea.style.display =
+        "block";
+
+
+    await loadMessages();
+
+
+    setTimeout(function() {
+
+        messages.scrollTop =
+            messages.scrollHeight;
+
+    }, 100);
+
+}
+
+
+// =========================
+// メッセージ読み込み
+// =========================
+
+async function loadMessages() {
+
+    if (!currentConsultationId) {
+        return;
+    }
+
+
+    messages.innerHTML = `
+        <div class="chat-loading">
+            メッセージを読み込んでいます...
+        </div>
+    `;
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("consultation_messages")
+            .select(
+                "id, consultation_id, user_id, sender_type, message, created_at"
+            )
+            .eq(
+                "consultation_id",
+                currentConsultationId
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: true
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "メッセージ取得エラー:",
+            error
+        );
+
+        messages.innerHTML = `
+            <div class="chat-loading">
+
+                メッセージを読み込めませんでした。
+
+                <br><br>
+
+                ${escapeHtml(
+                    error.message
+                )}
 
             </div>
         `;
@@ -218,194 +346,94 @@ async function loadMyConsultations() {
     }
 
 
-    // ----------------------------
-    // 相談一覧
-    // ----------------------------
-
-    myConsultations.innerHTML = "";
+    messages.innerHTML = "";
 
 
-    data.forEach(
-        function (item, index) {
+    if (!data || data.length === 0) {
 
-            const box =
-                document.createElement(
-                    "div"
-                );
+        messages.innerHTML = `
+            <div class="chat-loading">
+                まだメッセージはありません。
+            </div>
+        `;
 
-            box.className =
-                "my-consultation-card";
-
-
-            const createdAt =
-                item.created_at
-                    ? new Date(
-                        item.created_at
-                    ).toLocaleString(
-                        "ja-JP"
-                    )
-                    : "";
+        return;
+    }
 
 
-            // ------------------------
-            // 返信状態
-            // ------------------------
+    data.forEach(function(item) {
 
-            let replyArea = "";
-
-            if (item.reply) {
-
-                replyArea = `
-
-                    <div class="reply-notification">
-
-                        <span class="reply-notification-icon">
-                            🔔
-                        </span>
-
-                        <span>
-                            管理者から返信があります
-                        </span>
-
-                    </div>
+        const message =
+            document.createElement("div");
 
 
-                    <div class="reply-card">
-
-                        <div class="reply-title">
-
-                            <span>
-                                🌿
-                            </span>
-
-                            管理者からの返信
-
-                        </div>
-
-                        <div class="reply-text">
-
-                            ${escapeHtml(
-                                item.reply
-                            )}
-
-                        </div>
-
-                    </div>
-
-                `;
-
-            } else {
-
-                replyArea = `
-
-                    <div class="waiting-card">
-
-                        <span>
-                            🌱
-                        </span>
-
-                        <div>
-
-                            <strong>
-                                返信を待っています
-                            </strong>
-
-                            <p>
-                                管理者から返信が届くと、ここに表示されます。
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                `;
-            }
+        const isMine =
+            item.sender_type === "user";
 
 
-            // ------------------------
-            // カード本体
-            // ------------------------
+        message.className =
+            isMine
+                ? "chat-message my-chat-message"
+                : "chat-message admin-chat-message";
 
-            box.innerHTML = `
 
-                <div class="consultation-number">
-
-                    <span>
-                        相談 ${data.length - index}
-                    </span>
-
-                    ${
-                        item.reply
-                            ? `
-                                <span class="reply-badge">
-                                    返信あり
-                                </span>
-                              `
-                            : `
-                                <span class="waiting-badge">
-                                    返信待ち
-                                </span>
-                              `
+        const time =
+            item.created_at
+                ? new Date(
+                    item.created_at
+                ).toLocaleTimeString(
+                    "ja-JP",
+                    {
+                        hour: "2-digit",
+                        minute: "2-digit"
                     }
-
-                </div>
-
-
-                <div class="consultation-date">
-
-                    ${escapeHtml(
-                        createdAt
-                    )}
-
-                </div>
+                )
+                : "";
 
 
-                <div class="user-consultation">
+        message.innerHTML = `
 
-                    <div class="message-title">
+            <div class="chat-bubble">
 
-                        <span>
-                            💬
-                        </span>
+                ${escapeHtml(
+                    item.message
+                )}
 
-                        あなたの相談
+            </div>
 
-                    </div>
+            <div class="chat-time">
 
-                    <div class="consultation-text">
+                ${escapeHtml(
+                    time
+                )}
 
-                        ${escapeHtml(
-                            item.message || ""
-                        )}
+            </div>
 
-                    </div>
-
-                </div>
+        `;
 
 
-                ${replyArea}
+        messages.appendChild(
+            message
+        );
 
-            `;
+    });
 
 
-            myConsultations.appendChild(
-                box
-            );
+    messages.scrollTop =
+        messages.scrollHeight;
 
-        }
-    );
 }
 
 
-// ================================
-// 相談を送信
-// ================================
+// =========================
+// 新しい相談を始める
+// =========================
 
 if (sendButton) {
 
     sendButton.addEventListener(
         "click",
-        async function () {
+        async function() {
 
             const nickname =
                 nicknameInput.value.trim();
@@ -414,26 +442,33 @@ if (sendButton) {
                 messageInput.value.trim();
 
 
+            // ニックネーム確認
             if (!nickname) {
 
                 alert(
                     "ニックネームを入力してください。"
                 );
 
+                nicknameInput.focus();
+
                 return;
             }
 
 
+            // 相談内容確認
             if (!message) {
 
                 alert(
                     "相談内容を入力してください。"
                 );
 
+                messageInput.focus();
+
                 return;
             }
 
 
+            // ログイン確認
             const user =
                 await getCurrentUser();
 
@@ -441,7 +476,7 @@ if (sendButton) {
             if (!user) {
 
                 alert(
-                    "相談を送るにはログインしてください。"
+                    "ログインしてください。"
                 );
 
                 window.location.href =
@@ -458,20 +493,18 @@ if (sendButton) {
                 "送信中...";
 
 
-            if (sendMessage) {
-
-                sendMessage.textContent =
-                    "相談を送信しています...";
-
-            }
-
+            // =========================
+            // 相談を作成
+            // =========================
 
             const {
+                data,
                 error
             } =
                 await supabaseClient
                     .from("consultations")
                     .insert({
+
                         user_id:
                             user.id,
 
@@ -480,48 +513,88 @@ if (sendButton) {
 
                         message:
                             message
-                    });
+
+                    })
+                    .select()
+                    .single();
 
 
             if (error) {
 
                 console.error(
-                    "送信エラー:",
+                    "相談作成エラー:",
                     error
                 );
 
-
-                if (sendMessage) {
-
-                    sendMessage.textContent =
-                        "送信できませんでした。";
-
-                }
-
-
                 alert(
-                    "送信できませんでした。\n\n" +
+                    "相談を送信できませんでした。\n\n" +
                     error.message
                 );
-
 
                 sendButton.disabled =
                     false;
 
                 sendButton.textContent =
-                    "相談を送る";
+                    "相談を始める";
 
                 return;
             }
 
 
-            if (sendMessage) {
+            // =========================
+            // 最初のメッセージを保存
+            // =========================
 
-                sendMessage.textContent =
-                    "相談を送信しました！";
+            const {
+                error:
+                    messageError
+            } =
+                await supabaseClient
+                    .from(
+                        "consultation_messages"
+                    )
+                    .insert({
 
+                        consultation_id:
+                            data.id,
+
+                        user_id:
+                            user.id,
+
+                        sender_type:
+                            "user",
+
+                        message:
+                            message
+
+                    });
+
+
+            if (messageError) {
+
+                console.error(
+                    "メッセージ保存エラー:",
+                    messageError
+                );
+
+                alert(
+                    "相談は作成されましたが、最初のメッセージを保存できませんでした。\n\n" +
+                    messageError.message
+                );
+
+                sendButton.disabled =
+                    false;
+
+                sendButton.textContent =
+                    "相談を始める";
+
+                return;
             }
 
+
+            // =========================
+            // 入力欄を空にする
+            // =========================
 
             nicknameInput.value =
                 "";
@@ -530,19 +603,25 @@ if (sendButton) {
                 "";
 
 
-            alert(
-                "相談を送信しました！"
-            );
-
-
             sendButton.disabled =
                 false;
 
             sendButton.textContent =
-                "相談を送る";
+                "相談を始める";
 
 
-            await loadMyConsultations();
+            // =========================
+            // 相談一覧を更新
+            // =========================
+
+            await loadConsultations();
+
+
+            // =========================
+            // 今作った相談を開く
+            // =========================
+
+            openChat(data.id);
 
         }
     );
@@ -550,8 +629,268 @@ if (sendButton) {
 }
 
 
-// ================================
-// ページ開始
-// ================================
+// =========================
+// チャット送信
+// =========================
 
-loadMyConsultations();
+if (sendChatButton) {
+
+    sendChatButton.addEventListener(
+        "click",
+        sendChat
+    );
+
+}
+
+
+async function sendChat() {
+
+    const text =
+        chatMessage.value.trim();
+
+
+    if (!text) {
+        return;
+    }
+
+
+    if (!currentConsultationId) {
+        return;
+    }
+
+
+    const user =
+        await getCurrentUser();
+
+
+    if (!user) {
+
+        alert(
+            "ログインしてください。"
+        );
+
+        return;
+    }
+
+
+    sendChatButton.disabled =
+        true;
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from(
+                "consultation_messages"
+            )
+            .insert({
+
+                consultation_id:
+                    currentConsultationId,
+
+                user_id:
+                    user.id,
+
+                sender_type:
+                    "user",
+
+                message:
+                    text
+
+            });
+
+
+    if (error) {
+
+        console.error(
+            "メッセージ送信エラー:",
+            error
+        );
+
+        alert(
+            "メッセージを送信できませんでした。\n\n" +
+            error.message
+        );
+
+        sendChatButton.disabled =
+            false;
+
+        return;
+    }
+
+
+    chatMessage.value =
+        "";
+
+    sendChatButton.disabled =
+        false;
+
+
+    await loadMessages();
+
+}
+
+
+// =========================
+// Enterキーで送信
+// =========================
+
+if (chatMessage) {
+
+    chatMessage.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                sendChat();
+
+            }
+
+        }
+    );
+
+}
+
+
+// =========================
+// 戻るボタン
+// =========================
+
+if (backButton) {
+
+    backButton.addEventListener(
+        "click",
+        function() {
+
+            currentConsultationId =
+                null;
+
+            chatArea.style.display =
+                "none";
+
+            newConsultation.style.display =
+                "block";
+
+            consultationList.style.display =
+                "block";
+
+            loadConsultations();
+
+        }
+    );
+
+}
+
+
+// =========================
+// ログアウト
+// =========================
+
+if (logoutButton) {
+
+    logoutButton.addEventListener(
+        "click",
+        async function() {
+
+            const {
+                error
+            } =
+                await supabaseClient
+                    .auth
+                    .signOut();
+
+
+            if (error) {
+
+                alert(
+                    "ログアウトできませんでした。\n\n" +
+                    error.message
+                );
+
+                return;
+            }
+
+
+            window.location.href =
+                "login.html";
+
+        }
+    );
+
+}
+
+
+// =========================
+// リアルタイム更新
+// =========================
+
+function startRealtime() {
+
+    supabaseClient
+        .channel(
+            "consultation-messages-realtime"
+        )
+        .on(
+            "postgres_changes",
+            {
+                event: "INSERT",
+                schema: "public",
+                table: "consultation_messages"
+            },
+            function(payload) {
+
+                if (
+                    currentConsultationId &&
+                    String(
+                        payload.new.consultation_id
+                    ) ===
+                    String(
+                        currentConsultationId
+                    )
+                ) {
+
+                    loadMessages();
+
+                }
+
+            }
+        )
+        .subscribe();
+
+}
+
+
+// =========================
+// 開始
+// =========================
+
+async function start() {
+
+    const user =
+        await getCurrentUser();
+
+
+    if (!user) {
+
+        window.location.href =
+            "login.html";
+
+        return;
+    }
+
+
+    await loadConsultations();
+
+    startRealtime();
+
+}
+
+
+start();

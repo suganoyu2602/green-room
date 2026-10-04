@@ -1,7 +1,3 @@
-// ================================
-// Supabase設定
-// ================================
-
 const SUPABASE_URL =
     "https://yepucytxmlssewdxedzp.supabase.co";
 
@@ -15,38 +11,66 @@ const supabaseClient =
     );
 
 
-// ================================
-// VAPID公開キー
-// ================================
+// ========================================
+// HTML要素
+// ========================================
 
-const VAPID_PUBLIC_KEY =
-    "BEV3OrVZt_mLdvqkjw8SNRMTjvSEGeqdXlCoLBvBSSQDdaDF7UMcodhBs2sCP6CQMqCcs1YVsoag2kp-KRUXIss";
+const consultationList =
+    document.getElementById(
+        "consultationList"
+    );
 
+const historyArea =
+    document.getElementById(
+        "historyArea"
+    );
 
-// ================================
-// HTML
-// ================================
+const adminChatArea =
+    document.getElementById(
+        "adminChatArea"
+    );
 
-const consultations =
-    document.getElementById("consultations");
+const adminMessages =
+    document.getElementById(
+        "adminMessages"
+    );
+
+const adminChatMessage =
+    document.getElementById(
+        "adminChatMessage"
+    );
+
+const sendAdminMessageButton =
+    document.getElementById(
+        "sendAdminMessageButton"
+    );
+
+const backButton =
+    document.getElementById(
+        "backButton"
+    );
 
 const logoutButton =
-    document.getElementById("logoutButton");
-
-const enableNotificationButton =
     document.getElementById(
-        "enableNotificationButton"
+        "logoutButton"
     );
 
-const notificationStatus =
+const chatTitle =
     document.getElementById(
-        "notificationStatus"
+        "chatTitle"
     );
 
 
-// ================================
+// ========================================
+// 現在開いている相談
+// ========================================
+
+let currentConsultationId = null;
+
+
+// ========================================
 // HTMLエスケープ
-// ================================
+// ========================================
 
 function escapeHtml(text) {
 
@@ -60,9 +84,9 @@ function escapeHtml(text) {
 }
 
 
-// ================================
-// 現在のユーザー
-// ================================
+// ========================================
+// ログインユーザー取得
+// ========================================
 
 async function getCurrentUser() {
 
@@ -70,10 +94,7 @@ async function getCurrentUser() {
         data,
         error
     } =
-        await supabaseClient
-            .auth
-            .getUser();
-
+        await supabaseClient.auth.getUser();
 
     if (error) {
 
@@ -85,20 +106,18 @@ async function getCurrentUser() {
         return null;
     }
 
-
     return data.user;
 }
 
 
-// ================================
-// 管理者チェック
-// ================================
+// ========================================
+// 管理者確認
+// ========================================
 
 async function checkAdmin() {
 
     const user =
         await getCurrentUser();
-
 
     if (!user) {
 
@@ -110,7 +129,7 @@ async function checkAdmin() {
 
 
     const {
-        data: adminData,
+        data,
         error
     } =
         await supabaseClient
@@ -139,7 +158,7 @@ async function checkAdmin() {
     }
 
 
-    if (!adminData) {
+    if (!data) {
 
         alert(
             "管理者専用ページです。"
@@ -156,16 +175,18 @@ async function checkAdmin() {
 }
 
 
-// ================================
-// 相談一覧
-// ================================
+// ========================================
+// 相談履歴を読み込む
+// ========================================
 
 async function loadConsultations() {
 
-    consultations.innerHTML = `
-        <div class="chat-box">
-            相談を読み込んでいます...
+    consultationList.innerHTML = `
+
+        <div class="no-consultations">
+            相談履歴を読み込んでいます...
         </div>
+
     `;
 
 
@@ -175,7 +196,9 @@ async function loadConsultations() {
     } =
         await supabaseClient
             .from("consultations")
-            .select("*")
+            .select(
+                "id, created_at, nickname, message, user_id"
+            )
             .order(
                 "created_at",
                 {
@@ -187,16 +210,18 @@ async function loadConsultations() {
     if (error) {
 
         console.error(
-            "相談取得エラー:",
+            "相談履歴取得エラー:",
             error
         );
 
-        consultations.innerHTML = `
-            <div class="chat-box">
 
-                <h3>
-                    相談を読み込めませんでした
-                </h3>
+        consultationList.innerHTML = `
+
+            <div class="no-consultations">
+
+                <p>
+                    相談履歴を読み込めませんでした。
+                </p>
 
                 <p>
                     ${escapeHtml(
@@ -205,42 +230,75 @@ async function loadConsultations() {
                 </p>
 
             </div>
+
         `;
 
         return;
     }
 
 
-    if (!data || data.length === 0) {
+    consultationList.innerHTML = "";
 
-        consultations.innerHTML = `
-            <div class="chat-box">
+
+    // ========================================
+    // 相談が0件の場合
+    // ========================================
+
+    if (
+        !data ||
+        data.length === 0
+    ) {
+
+        consultationList.innerHTML = `
+
+            <div class="no-consultations">
 
                 <p>
-                    まだ相談はありません。
+                    📭 まだ相談はありません。
+                </p>
+
+                <p>
+                    ユーザーが相談を送ると、
+                    ここに履歴が表示されます。
                 </p>
 
             </div>
+
         `;
 
         return;
     }
 
 
-    consultations.innerHTML = "";
-
+    // ========================================
+    // 相談を1件ずつ表示
+    // ========================================
 
     data.forEach(
-        function (item, index) {
+        function (item) {
 
-            const box =
+            const card =
                 document.createElement(
-                    "div"
+                    "button"
                 );
 
 
-            box.className =
-                "chat-box admin-card";
+            card.type =
+                "button";
+
+
+            card.className =
+                "consultation-history-card";
+
+
+            const nickname =
+                item.nickname ||
+                "相談者";
+
+
+            const message =
+                item.message ||
+                "相談内容はありません。";
 
 
             const createdAt =
@@ -253,186 +311,132 @@ async function loadConsultations() {
                     : "";
 
 
-            const hasReply =
-                Boolean(
-                    item.reply &&
-                    item.reply.trim()
-                );
+            card.innerHTML = `
 
+                <div class="
+                    consultation-history-title
+                ">
 
-            box.innerHTML = `
-
-                <div class="admin-info">
-
-                    <h2>
-                        相談 ${index + 1}
-                    </h2>
-
-                    <p>
-
-                        <strong>
-                            ニックネーム：
-                        </strong>
-
-                        ${escapeHtml(
-                            item.nickname ||
-                            "名無し"
-                        )}
-
-                    </p>
-
-                    <p>
-
-                        <strong>
-                            投稿日時：
-                        </strong>
-
-                        ${escapeHtml(
-                            createdAt
-                        )}
-
-                    </p>
-
-                    <p>
-
-                        <strong>
-                            状態：
-                        </strong>
-
-                        ${
-                            hasReply
-                                ? "返信済み"
-                                : "未返信"
-                        }
-
-                    </p>
-
-                </div>
-
-
-                <div class="message user-message">
-
-                    <strong>
-                        相談内容
-                    </strong>
-
-                    <br><br>
-
+                    🌿
                     ${escapeHtml(
-                        item.message ||
-                        ""
+                        nickname
                     )}
 
                 </div>
 
 
-                <div class="admin-reply">
+                <div class="
+                    consultation-history-message
+                ">
 
-                    <label>
-                        この相談への返信
-                    </label>
+                    ${escapeHtml(
+                        message
+                    )}
 
-                    <textarea
-                        id="reply-${item.id}"
-                        placeholder="この相談者への返信を書いてください..."
-                    >${escapeHtml(
-                        item.reply || ""
-                    )}</textarea>
+                </div>
 
-                    <button
-                        class="reply-button"
-                        type="button"
-                        data-id="${item.id}">
 
-                        ${
-                            hasReply
-                                ? "返信を更新"
-                                : "返信する"
-                        }
+                <div class="
+                    consultation-history-date
+                ">
 
-                    </button>
+                    ${escapeHtml(
+                        createdAt
+                    )}
 
                 </div>
 
             `;
 
 
-            consultations.appendChild(
-                box
-            );
-
-        }
-    );
-
-
-    const replyButtons =
-        document.querySelectorAll(
-            ".reply-button"
-        );
-
-
-    replyButtons.forEach(
-        function (button) {
-
-            button.addEventListener(
+            card.addEventListener(
                 "click",
-                saveReply
+                function () {
+
+                    openAdminChat(
+                        item
+                    );
+
+                }
+            );
+
+
+            consultationList.appendChild(
+                card
             );
 
         }
     );
+
 }
 
 
-// ================================
-// 返信保存
-// ================================
+// ========================================
+// トーク画面を開く
+// ========================================
 
-async function saveReply(event) {
+async function openAdminChat(
+    consultation
+) {
 
-    const button =
-        event.currentTarget;
-
-
-    const id =
-        button.dataset.id;
+    currentConsultationId =
+        consultation.id;
 
 
-    const textarea =
-        document.getElementById(
-            `reply-${id}`
+    historyArea.style.display =
+        "none";
+
+
+    adminChatArea.style.display =
+        "block";
+
+
+    chatTitle.textContent =
+        "🌿 " +
+        (
+            consultation.nickname ||
+            "相談者"
         );
 
 
-    if (!textarea) {
+    await loadAdminMessages(
+        consultation
+    );
 
-        alert(
-            "返信欄が見つかりません。"
-        );
 
+    setTimeout(
+        function () {
+
+            adminMessages.scrollTop =
+                adminMessages.scrollHeight;
+
+        },
+        100
+    );
+
+}
+
+
+// ========================================
+// トーク履歴を読み込む
+// ========================================
+
+async function loadAdminMessages(
+    consultation = null
+) {
+
+    if (!currentConsultationId) {
         return;
     }
 
 
-    const replyText =
-        textarea.value.trim();
+    adminMessages.innerHTML = `
 
+        <div class="chat-loading">
+            メッセージを読み込んでいます...
+        </div>
 
-    if (!replyText) {
-
-        alert(
-            "返信内容を入力してください。"
-        );
-
-        return;
-    }
-
-
-    button.disabled =
-        true;
-
-    button.textContent =
-        "保存中...";
+    `;
 
 
     const {
@@ -440,419 +444,404 @@ async function saveReply(event) {
         error
     } =
         await supabaseClient
-            .from("consultations")
-            .update({
-                reply:
-                    replyText
-            })
-            .eq(
-                "id",
-                id
+            .from(
+                "consultation_messages"
             )
             .select(
-                "id, reply"
+                "id, consultation_id, user_id, sender_type, message, created_at"
+            )
+            .eq(
+                "consultation_id",
+                currentConsultationId
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: true
+                }
             );
 
 
     if (error) {
 
         console.error(
-            "返信保存エラー:",
+            "メッセージ取得エラー:",
             error
         );
 
+
+        adminMessages.innerHTML = `
+
+            <div class="chat-loading">
+
+                <p>
+                    メッセージを読み込めませんでした。
+                </p>
+
+                <p>
+                    ${escapeHtml(
+                        error.message
+                    )}
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    adminMessages.innerHTML = "";
+
+
+    // ========================================
+    // メッセージ履歴が存在する場合
+    // ========================================
+
+    if (
+        data &&
+        data.length > 0
+    ) {
+
+        data.forEach(
+            function (item) {
+
+                addMessageToScreen(
+                    item
+                );
+
+            }
+        );
+
+    }
+
+
+    // ========================================
+    // 古い相談データの場合
+    //
+    // consultation_messages がまだなくても
+    // consultations.message を履歴として表示
+    // ========================================
+
+    else if (
+        consultation &&
+        consultation.message
+    ) {
+
+        const oldMessage = {
+
+            sender_type: "user",
+
+            message:
+                consultation.message,
+
+            created_at:
+                consultation.created_at
+
+        };
+
+
+        addMessageToScreen(
+            oldMessage
+        );
+
+    }
+
+
+    // ========================================
+    // 本当に何もない場合
+    // ========================================
+
+    else {
+
+        adminMessages.innerHTML = `
+
+            <div class="chat-loading">
+
+                まだメッセージはありません。
+
+            </div>
+
+        `;
+
+    }
+
+
+    adminMessages.scrollTop =
+        adminMessages.scrollHeight;
+
+}
+
+
+// ========================================
+// メッセージを画面に追加
+// ========================================
+
+function addMessageToScreen(
+    item
+) {
+
+    const message =
+        document.createElement(
+            "div"
+        );
+
+
+    const isAdmin =
+        item.sender_type ===
+        "admin";
+
+
+    if (isAdmin) {
+
+        message.className =
+            "chat-message my-chat-message";
+
+    } else {
+
+        message.className =
+            "chat-message admin-chat-message";
+
+    }
+
+
+    const time =
+        item.created_at
+            ? new Date(
+                item.created_at
+            ).toLocaleTimeString(
+                "ja-JP",
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            )
+            : "";
+
+
+    message.innerHTML = `
+
+        <div class="chat-bubble">
+
+            ${escapeHtml(
+                item.message
+            )}
+
+        </div>
+
+        <div class="chat-time">
+
+            ${escapeHtml(
+                time
+            )}
+
+        </div>
+
+    `;
+
+
+    adminMessages.appendChild(
+        message
+    );
+
+}
+
+
+// ========================================
+// 管理者から返信
+// ========================================
+
+async function sendAdminMessage() {
+
+    const text =
+        adminChatMessage.value.trim();
+
+
+    if (!text) {
+
+        return;
+
+    }
+
+
+    if (!currentConsultationId) {
+
         alert(
-            "返信を保存できませんでした。\n\n" +
+            "相談を選択してください。"
+        );
+
+        return;
+
+    }
+
+
+    const user =
+        await getCurrentUser();
+
+
+    if (!user) {
+
+        alert(
+            "ログインしてください。"
+        );
+
+        return;
+
+    }
+
+
+    sendAdminMessageButton.disabled =
+        true;
+
+
+    sendAdminMessageButton.textContent =
+        "送信中...";
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from(
+                "consultation_messages"
+            )
+            .insert({
+
+                consultation_id:
+                    currentConsultationId,
+
+                user_id:
+                    user.id,
+
+                sender_type:
+                    "admin",
+
+                message:
+                    text
+
+            });
+
+
+    if (error) {
+
+        console.error(
+            "管理者メッセージ送信エラー:",
+            error
+        );
+
+
+        alert(
+            "返信を送信できませんでした。\n\n" +
             error.message
         );
 
-        button.disabled =
+
+        sendAdminMessageButton.disabled =
             false;
 
-        button.textContent =
-            "返信する";
+
+        sendAdminMessageButton.textContent =
+            "送信";
+
 
         return;
+
     }
 
 
-    if (
-        !data ||
-        data.length === 0
-    ) {
-
-        alert(
-            "返信を保存できませんでした。\n\n" +
-            "データベースの権限設定を確認してください。"
-        );
-
-        button.disabled =
-            false;
-
-        button.textContent =
-            "返信する";
-
-        return;
-    }
+    adminChatMessage.value =
+        "";
 
 
-    alert(
-        "返信を保存しました！"
-    );
-
-
-    button.disabled =
+    sendAdminMessageButton.disabled =
         false;
 
 
-    await loadConsultations();
-}
+    sendAdminMessageButton.textContent =
+        "送信";
 
 
-// ================================
-// Base64 → Uint8Array
-// ================================
-
-function urlBase64ToUint8Array(
-    base64String
-) {
-
-    const padding =
-        "=".repeat(
-            (4 - base64String.length % 4) % 4
-        );
-
-
-    const base64 =
-        (
-            base64String +
-            padding
-        )
-            .replace(
-                /\-/g,
-                "+"
-            )
-            .replace(
-                /_/g,
-                "/"
-            );
-
-
-    const rawData =
-        window.atob(base64);
-
-
-    const outputArray =
-        new Uint8Array(
-            rawData.length
-        );
-
-
-    for (
-        let i = 0;
-        i < rawData.length;
-        ++i
-    ) {
-
-        outputArray[i] =
-            rawData.charCodeAt(i);
-
-    }
-
-
-    return outputArray;
-}
-
-
-// ================================
-// 通知を有効にする
-// ================================
-
-async function enablePushNotification() {
-
-    if (
-        !("serviceWorker" in navigator)
-    ) {
-
-        alert(
-            "このブラウザはService Workerに対応していません。"
-        );
-
-        return;
-    }
-
-
-    if (
-        !("PushManager" in window)
-    ) {
-
-        alert(
-            "このブラウザはPush通知に対応していません。"
-        );
-
-        return;
-    }
-
-
-    if (
-        !("Notification" in window)
-    ) {
-
-        alert(
-            "このブラウザは通知に対応していません。"
-        );
-
-        return;
-    }
-
-
-    try {
-
-        notificationStatus.textContent =
-            "通知を準備しています...";
-
-
-        const permission =
-            await Notification.requestPermission();
-
-
-        if (
-            permission !== "granted"
-        ) {
-
-            notificationStatus.textContent =
-                "通知が許可されていません。";
-
-            alert(
-                "通知を許可してください。"
-            );
-
-            return;
-        }
-
-
-        const registration =
-            await navigator
-                .serviceWorker
-                .register(
-                    "service-worker.js"
-                );
-
-
-        await navigator
-            .serviceWorker
-            .ready;
-
-
-        let subscription =
-            await registration
-                .pushManager
-                .getSubscription();
-
-
-        if (!subscription) {
-
-            subscription =
-                await registration
-                    .pushManager
-                    .subscribe({
-
-                        userVisibleOnly:
-                            true,
-
-                        applicationServerKey:
-                            urlBase64ToUint8Array(
-                                VAPID_PUBLIC_KEY
-                            )
-
-                    });
-
-        }
-
-
-        const user =
-            await getCurrentUser();
-
-
-        if (!user) {
-
-            alert(
-                "ログインしてください。"
-            );
-
-            return;
-        }
-
-
-        const subscriptionJson =
-            subscription.toJSON();
-
-
-        const endpoint =
-            subscriptionJson.endpoint;
-
-
-        const p256dh =
-            subscriptionJson.keys?.p256dh;
-
-
-        const auth =
-            subscriptionJson.keys?.auth;
-
-
-        if (
-            !endpoint ||
-            !p256dh ||
-            !auth
-        ) {
-
-            throw new Error(
-                "Push通知の購読情報を取得できませんでした。"
-            );
-
-        }
-
-
-        const {
-            error
-        } =
-            await supabaseClient
-                .from("push_subscriptions")
-                .upsert(
-                    {
-                        user_id:
-                            user.id,
-
-                        endpoint:
-                            endpoint,
-
-                        p256dh:
-                            p256dh,
-
-                        auth:
-                            auth
-                    },
-                    {
-                        onConflict:
-                            "endpoint"
-                    }
-                );
-
-
-        if (error) {
-
-            throw error;
-
-        }
-
-
-        notificationStatus.textContent =
-            "🔔 通知は有効になっています！";
-
-
-        enableNotificationButton.textContent =
-            "🔔 通知は有効です";
-
-
-        enableNotificationButton.disabled =
-            true;
-
-
-        alert(
-            "通知を有効にしました！"
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Push通知エラー:",
-            error
-        );
-
-
-        notificationStatus.textContent =
-            "通知の設定に失敗しました。";
-
-
-        alert(
-            "通知の設定に失敗しました。\n\n" +
-            error.message
-        );
-
-    }
+    await loadAdminMessages();
 
 }
 
 
-// ================================
-// 通知ボタン
-// ================================
+// ========================================
+// Enterで送信
+// Shift + Enterなら改行
+// ========================================
 
-if (
-    enableNotificationButton
-) {
+if (adminChatMessage) {
 
-    enableNotificationButton
-        .addEventListener(
-            "click",
-            enablePushNotification
-        );
+    adminChatMessage.addEventListener(
+        "keydown",
+        function (event) {
 
-}
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
 
+                event.preventDefault();
 
-// ================================
-// Realtime
-// ================================
-
-function startRealtime() {
-
-    supabaseClient
-        .channel(
-            "consultations-realtime"
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:
-                    "INSERT",
-
-                schema:
-                    "public",
-
-                table:
-                    "consultations"
-            },
-            function (payload) {
-
-                console.log(
-                    "新しい相談:",
-                    payload.new
-                );
-
-
-                loadConsultations();
+                sendAdminMessage();
 
             }
-        )
-        .subscribe(
-            function (status) {
 
-                console.log(
-                    "Realtime:",
-                    status
-                );
-
-            }
-        );
+        }
+    );
 
 }
 
 
-// ================================
+// ========================================
+// 送信ボタン
+// ========================================
+
+if (sendAdminMessageButton) {
+
+    sendAdminMessageButton.addEventListener(
+        "click",
+        sendAdminMessage
+    );
+
+}
+
+
+// ========================================
+// 履歴に戻る
+// ========================================
+
+if (backButton) {
+
+    backButton.addEventListener(
+        "click",
+        function () {
+
+            currentConsultationId =
+                null;
+
+
+            adminChatArea.style.display =
+                "none";
+
+
+            historyArea.style.display =
+                "block";
+
+
+            loadConsultations();
+
+        }
+    );
+
+}
+
+
+// ========================================
 // ログアウト
-// ================================
+// ========================================
 
 if (logoutButton) {
 
@@ -876,6 +865,7 @@ if (logoutButton) {
                 );
 
                 return;
+
             }
 
 
@@ -888,9 +878,55 @@ if (logoutButton) {
 }
 
 
-// ================================
+// ========================================
+// リアルタイム更新
+// ========================================
+
+function startRealtime() {
+
+    supabaseClient
+        .channel(
+            "admin-consultation-messages"
+        )
+        .on(
+            "postgres_changes",
+            {
+                event: "INSERT",
+                schema: "public",
+                table: "consultation_messages"
+            },
+            function (payload) {
+
+                if (
+                    currentConsultationId &&
+                    String(
+                        payload.new.consultation_id
+                    ) ===
+                    String(
+                        currentConsultationId
+                    )
+                ) {
+
+                    loadAdminMessages();
+
+                }
+
+
+                // 新しい相談メッセージが来たら
+                // 履歴一覧も更新
+
+                loadConsultations();
+
+            }
+        )
+        .subscribe();
+
+}
+
+
+// ========================================
 // 開始
-// ================================
+// ========================================
 
 async function start() {
 
@@ -899,7 +935,9 @@ async function start() {
 
 
     if (!isAdmin) {
+
         return;
+
     }
 
 

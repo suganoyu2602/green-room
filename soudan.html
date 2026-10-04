@@ -9,7 +9,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0">
 
-    <title>相談する | Green Room</title>
+    <title>相談 | Green Room</title>
 
     <link
         rel="stylesheet"
@@ -17,9 +17,7 @@
 
 </head>
 
-
 <body>
-
 
 <header class="header">
 
@@ -27,116 +25,152 @@
         🌿 Green Room
     </div>
 
-
     <nav>
 
         <a href="index.html">
             ホーム
         </a>
 
-        <a href="soudan.html">
-            相談する
-        </a>
+        <button
+            id="logoutButton"
+            class="secondary-button"
+            type="button">
+            ログアウト
+        </button>
 
     </nav>
 
 </header>
 
 
-
 <main class="chat-page">
-
 
     <div class="chat-header">
 
         <p class="section-label">
-            CONSULTATION
+            GREEN ROOM
         </p>
 
         <h1>
-            相談する
+            あなたの相談
         </h1>
 
         <p>
-            誰かに話したいことを<br>
-            自分のペースで書いてみてください。
+            管理者とゆっくりお話しできます。
         </p>
 
     </div>
 
 
+    <!-- 新しい相談 -->
 
-    <!-- 相談を書く場所 -->
+    <div
+        id="newConsultation"
+        class="chat-box">
 
-    <div class="chat-box">
-
+        <h2>
+            新しく相談する
+        </h2>
 
         <div class="input-area">
-
 
             <input
                 type="text"
                 id="nickname"
                 placeholder="ニックネーム">
 
-
             <textarea
                 id="message"
                 placeholder="相談内容を書いてください..."
             ></textarea>
 
-
             <button
                 id="sendButton">
 
-                相談を送る
+                相談を始める
 
             </button>
 
-
         </div>
-
 
         <p
             id="sendMessage"
             class="status-message">
         </p>
 
+    </div>
+
+
+    <!-- 相談一覧 -->
+
+    <div
+        id="consultationList"
+        class="consultation-list">
+
+        相談を読み込んでいます...
 
     </div>
 
 
+    <!-- トーク画面 -->
 
-    <!-- 自分の相談 -->
+    <div
+        id="chatArea"
+        class="chat-area"
+        style="display:none;">
 
-    <div class="my-consultations">
+        <div class="chat-room-header">
 
+            <button
+                id="backButton"
+                type="button"
+                class="back-button">
 
-        <div class="chat-header">
+                ← 戻る
 
-            <h2>
-                あなたの相談
-            </h2>
+            </button>
 
-            <p>
-                送った相談と管理者からの返信を確認できます。
-            </p>
+            <div>
+
+                <strong>
+                    🌿 Green Room
+                </strong>
+
+                <span>
+                    管理者との相談
+                </span>
+
+            </div>
 
         </div>
 
 
-        <div id="myConsultations">
-
-            相談を読み込んでいます...
-
+        <div
+            id="messages"
+            class="messages">
         </div>
 
+
+        <div class="chat-input">
+
+            <textarea
+                id="chatMessage"
+                placeholder="メッセージを入力..."
+                rows="1"></textarea>
+
+            <button
+                id="sendChatButton"
+                type="button">
+
+                送信
+
+            </button>
+
+        </div>
 
     </div>
-
 
 </main>
-
 
 
 <footer>
@@ -148,13 +182,10 @@
 </footer>
 
 
-<!-- 相談ページ用JavaScript -->
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="soudan.js"></script>
 
 </body>
+
 </html>
-
-
-

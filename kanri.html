@@ -17,16 +17,13 @@
 
 </head>
 
-
 <body>
-
 
 <header class="header">
 
     <div class="logo">
         🌿 Green Room
     </div>
-
 
     <nav>
 
@@ -42,9 +39,7 @@
             id="logoutButton"
             class="secondary-button"
             type="button">
-
             ログアウト
-
         </button>
 
     </nav>
@@ -52,9 +47,7 @@
 </header>
 
 
-
 <main class="chat-page">
-
 
     <div class="chat-header">
 
@@ -67,41 +60,105 @@
         </h1>
 
         <p>
-            届いた相談を確認して、<br>
-            それぞれの相談に個別に返信できます。
+            相談者との相談履歴を確認できます。
         </p>
-<button
-    id="enableNotificationButton"
-    class="secondary-button"
-    type="button">
 
-    🔔 通知を有効にする
-
-</button>
-
-<p
-    id="notificationStatus"
-    class="status-message">
-</p>
     </div>
 
 
+    <!-- =========================
+         相談履歴
+    ========================== -->
 
-    <!-- 相談一覧 -->
+    <section
+        id="historyArea"
+        class="chat-box">
 
-    <div id="consultations">
+        <h2>
+            📋 相談履歴
+        </h2>
 
-        <div class="chat-box">
+        <p class="history-description">
+            これまでの相談を選んでください。
+        </p>
 
-            相談を読み込んでいます...
+        <div
+            id="consultationList"
+            class="consultation-list">
+
+            相談履歴を読み込んでいます...
 
         </div>
 
-    </div>
+    </section>
 
+
+    <!-- =========================
+         トーク画面
+    ========================== -->
+
+    <section
+        id="adminChatArea"
+        class="chat-area"
+        style="display:none;">
+
+        <div class="chat-room-header">
+
+            <button
+                id="backButton"
+                type="button"
+                class="back-button">
+
+                ← 履歴に戻る
+
+            </button>
+
+            <div class="chat-room-title">
+
+                <strong id="chatTitle">
+                    🌿 Green Room
+                </strong>
+
+                <span>
+                    相談者とのトーク
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- トーク履歴 -->
+
+        <div
+            id="adminMessages"
+            class="messages">
+
+        </div>
+
+
+        <!-- 管理者返信 -->
+
+        <div class="chat-input">
+
+            <textarea
+                id="adminChatMessage"
+                placeholder="返信を入力..."
+                rows="1"></textarea>
+
+            <button
+                id="sendAdminMessageButton"
+                type="button">
+
+                送信
+
+            </button>
+
+        </div>
+
+    </section>
 
 </main>
-
 
 
 <footer>
@@ -113,16 +170,9 @@
 </footer>
 
 
-
-<!-- Supabase -->
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-
-<!-- 管理画面用JavaScript -->
-
 <script src="kanri.js"></script>
-
 
 </body>
 
